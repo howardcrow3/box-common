@@ -13,7 +13,6 @@ runs:
     - name: Install trunk
       shell: bash
       env:
-        TRUNK_VERSION: ${{ inputs.trunk-version }}
       run: |
         version="$TRUNK_VERSION"
         # Restrict the version to a single safe release-tag component. This keeps

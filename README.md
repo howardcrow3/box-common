@@ -1,15 +1,15 @@
-# artcraft-common-actions
+# box-common
 
-<a href="https://sonarcloud.io/project/overview?id=storytold_craft-common-actions"><img alt="Scanned by SonarCloud" src="https://img.shields.io/badge/Scanned_by-SonarCloud-4b9fd5?style=flat-square&logo=sonarqubecloud&logoColor=white"></a>
+Reusable GitHub Actions workflows and composite actions for the Turtle Box apps (DesignBox, PhotoBox, VideoBox, Lightbox).
 
-Reusable GitHub Actions workflows and composite actions for Storyteller / ArtCraft desktop and web applications.
+This repository unifies and eliminates duplicate CI/CD and release workflow definitions across the Turtle Box apps into DRY, reusable GitHub Actions.
 
-This repository unifies and eliminates duplicate CI/CD and release workflow definitions across the ArtCraft ecosystem into DRY, reusable GitHub Actions.
+It is a fork of [storytold/craft-common-actions](https://github.com/storytold/craft-common-actions), imported as a snapshot without upstream history; see [NOTICE](NOTICE).
 
 ## Workflows Included
 
 ### 1. `release.yml`
-Full multi-platform release pipeline for Craft apps:
+Full multi-platform release pipeline for the box apps:
 - **macOS universal** (x86_64 + aarch64 universal bundle, DMG, CLI, Developer ID codesign & notarization)
 - **Windows** (x64, x86, ARM64 MSI installer with WiX v5, CLI, Azure Trusted Signing)
 - **Linux** (x86_64, aarch64 AppImage, deb, rpm, tar.gz via nfpm)
@@ -43,10 +43,10 @@ concurrency:
 
 jobs:
   release:
-    uses: storytold/craft-common-actions/.github/workflows/release.yml@main
+    uses: howardcrow3/box-common/.github/workflows/release.yml@main
     with:
-      app-name: photocraft
-      app-title: PhotoCraft
+      app-name: photobox
+      app-title: PhotoBox
       version: ${{ inputs.version }}
     secrets:
       APPLE_CERTIFICATE: ${{ secrets.APPLE_CERTIFICATE }}
@@ -80,7 +80,7 @@ Build provenance, a CycloneDX SBOM, and a Sigstore signature of the published fi
       id-token: write
       attestations: write
       artifact-metadata: write
-    uses: storytold/craft-common-actions/.github/workflows/supply-chain.yml@main
+    uses: howardcrow3/box-common/.github/workflows/supply-chain.yml@main
     with:
       version: ${{ needs.release.outputs.version }}
 ```
@@ -88,7 +88,7 @@ Build provenance, a CycloneDX SBOM, and a Sigstore signature of the published fi
 After a release that ran the extra job:
 
 ```sh
-gh attestation verify PhotoCraft-1.2.3-macos-universal.zip --owner storytold
+gh attestation verify PhotoBox-1.2.3-macos-universal.zip --owner howardcrow3
 ```
 
 The command checks the signature and prints the repository and commit that built the file. The SBOM is attached to the draft release as `sbom.cyclonedx.json`.
@@ -139,7 +139,7 @@ concurrency:
 
 jobs:
   lint:
-    uses: storytold/craft-common-actions/.github/workflows/packaging-lint.yml@main
+    uses: howardcrow3/box-common/.github/workflows/packaging-lint.yml@main
 ```
 
 ### 3. `windows-arm64.yml`
@@ -173,10 +173,10 @@ permissions:
 
 jobs:
   windows-arm64:
-    uses: storytold/craft-common-actions/.github/workflows/windows-arm64.yml@main
+    uses: howardcrow3/box-common/.github/workflows/windows-arm64.yml@main
     with:
-      app-name: wordcraft
-      app-dir: WordCraft
+      app-name: photobox
+      app-dir: PhotoBox
 ```
 
 ### 4. `freebsd.yml`
@@ -292,7 +292,7 @@ permissions:
 
 jobs:
   freebsd:
-    uses: storytold/craft-common-actions/.github/workflows/freebsd.yml@main
+    uses: howardcrow3/box-common/.github/workflows/freebsd.yml@main
     with:
       require-craft-fonts: true
 ```
@@ -328,7 +328,7 @@ concurrency:
 
 jobs:
   nix:
-    uses: storytold/craft-common-actions/.github/workflows/nix.yml@main
+    uses: howardcrow3/box-common/.github/workflows/nix.yml@main
 ```
 
 ### 6. `gate.yml`
@@ -373,7 +373,7 @@ concurrency:
 jobs:
   gate:
     # Tracks @main so suite-wide CI fixes reach every app without a PR in each repository.
-    uses: storytold/craft-common-actions/.github/workflows/gate.yml@main
+    uses: howardcrow3/box-common/.github/workflows/gate.yml@main
     with:
       packages: >-
         pkg-config libxkbcommon-dev libwayland-dev libx11-dev libxcb1-dev libxcursor-dev
@@ -383,12 +383,12 @@ jobs:
 Concurrency belongs to the caller: a reusable workflow cannot set it for the run.
 
 An app that also checks Windows on main, on manual runs and on pull requests labelled `full-ci`,
-with per-OS environment and a shorter Windows gate (PDFCraft's call):
+with per-OS environment and a shorter Windows gate (an example call):
 
 ```yaml
 jobs:
   gate:
-    uses: storytold/craft-common-actions/.github/workflows/gate.yml@main
+    uses: howardcrow3/box-common/.github/workflows/gate.yml@main
     with:
       os: ${{ (github.event_name != 'pull_request' || contains(github.event.pull_request.labels.*.name, 'full-ci')) && '["ubuntu-24.04","windows-latest"]' || '["ubuntu-24.04"]' }}
       craft-fonts-ref: 3d9ab3a132ed0eff457e424226a435a901da30d3
@@ -396,8 +396,8 @@ jobs:
         libxkbcommon-dev libwayland-dev libx11-dev libxrandr-dev libxi-dev libgl1-mesa-dev
         libgtk-3-dev qpdf poppler-utils
       tools: cargo-nextest@0.9.149,cargo-deny@0.20.2
-      linux-env: PDFCRAFT_ORACLES_REQUIRED=1
-      windows-env: PDFCRAFT_REQUIRE_WINRES=1
+      linux-env: PHOTOBOX_ORACLES_REQUIRED=1
+      windows-env: PHOTOBOX_REQUIRE_WINRES=1
       # Windows checks what differs by platform: the build (with resources) and the tests.
       windows-command: |
         cargo clippy --workspace --all-targets --locked -- -D warnings
@@ -417,7 +417,7 @@ Individual actions are also available for composing custom pipelines:
 - `actions/install-apt-packages`: Installs the given Ubuntu packages and keeps the downloaded `.deb` files in the Actions cache, so later runs install without the mirror download. By default only pushes to the default branch save the cache; PRs restore it. For an app's CI:
 
   ```yaml
-  - uses: storytold/craft-common-actions/actions/install-apt-packages@main
+  - uses: howardcrow3/box-common/actions/install-apt-packages@main
     with:
       packages: pkg-config libxkbcommon-dev libwayland-dev mesa-vulkan-drivers
   ```
@@ -426,9 +426,13 @@ Individual actions are also available for composing custom pipelines:
 - `actions/draft-release`: Collects artifacts, calculates SHA256 checksums, and publishes/updates draft GitHub release.
 - `actions/packaging-lint`: Steps for packaging linter.
 
-## Storytold Organization Hosting
+## Hosting
 
-This repository is hosted at `storytold/craft-common-actions` for all Storytold / ArtCraft craftapps.
+This repository is hosted at `howardcrow3/box-common` for all the Turtle Box apps. Callers reference it as
+`howardcrow3/box-common/.github/workflows/<name>.yml@main`. If the repository is private, enable
+**Settings > Actions > General > Access** ("Accessible from repositories owned by the user") so the app repositories can call it.
+
+The font and translation checkouts still come from upstream: `storytold/craft-fonts` and `storytold/craft-i18n`.
 
 ## App-specific packaging checks
 
@@ -454,7 +458,7 @@ using `uses` cannot set `timeout-minutes`.
 | Windows ARM64 package / install | 90 / 30 |
 | CI gate, per leg (`timeout-minutes` input) | 60 |
 
-The new limits leave headroom over sampled Craft app job timings; the existing
+The new limits leave headroom over sampled app job timings; the existing
 FreeBSD and ARM64 limits are retained. Treat these as initial limits, review
 successful cold builds after rollout and lower them when the evidence supports it.
 These are per-job limits, not a total workflow duration or spend budget.

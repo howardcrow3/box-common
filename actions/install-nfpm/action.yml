@@ -17,7 +17,6 @@ runs:
     - name: Download and verify nfpm
       shell: bash
       env:
-        NFPM_VERSION: ${{ inputs.nfpm-version }}
         DEB_ARCH: ${{ inputs.deb-arch }}
       run: |
         version="$NFPM_VERSION"

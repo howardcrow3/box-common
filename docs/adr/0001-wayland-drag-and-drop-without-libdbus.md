@@ -21,7 +21,7 @@ What the craft apps already have:
 
 - Every craft app on these shared workflows already depends on **zbus**, which is pure Rust and comes in through `rfd`.
 - None of them link `libdbus-sys`.
-- vectorcraft's D-Bus single-instance handoff (storytold/vectorcraft#3423) also uses zbus.
+- A sibling app's D-Bus single-instance handoff (upstream storytold/vectorcraft#3423) also uses zbus.
 
 ## Decision
 

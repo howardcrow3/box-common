@@ -1,0 +1,15 @@
+box-common
+Copyright (c) 2026 the box-common contributors.
+
+box-common is a fork of storytold/craft-common-actions
+(https://github.com/storytold/craft-common-actions), imported at commit
+9e42334399655e6838f234c912d29c0697cad477 without upstream history, then rebranded for the Turtle Box
+apps (references redirected to howardcrow3/box-common, per-app build variables renamed, Sonar and
+CodeRabbit configuration removed).
+
+The upstream repository carries no license file at that commit, so no license is granted by this
+notice for the upstream workflow and action code; its copyright remains with its authors. Before
+redistributing this repository beyond its owner, obtain a license from the upstream authors or replace the
+imported files. New files and changes made here are the box-common contributors' own work.
+
+The workflows still check out storytold/craft-fonts and storytold/craft-i18n, which have their own terms.

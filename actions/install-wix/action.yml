@@ -17,7 +17,6 @@ runs:
     - name: Install WiX
       shell: pwsh
       env:
-        WIX_VERSION: ${{ inputs.wix-version }}
         INSTALL_EXTENSIONS: ${{ inputs.install-extensions }}
       run: |
         $version = $env:WIX_VERSION

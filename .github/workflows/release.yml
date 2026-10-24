@@ -4,11 +4,11 @@ on:
   workflow_call:
     inputs:
       app-name:
-        description: "Application repository name (e.g. photocraft, cadcraft)"
+        description: "Application repository name (e.g. photobox, designbox)"
         type: string
         required: true
       app-title:
-        description: "Application display name (e.g. PhotoCraft, CADCraft)"
+        description: "Application display name (e.g. PhotoBox, DesignBox)"
         type: string
         required: true
       craft-fonts-ref:
@@ -122,19 +122,20 @@ permissions:
   contents: read
 
 jobs:
-  # Fails fast before any build: git dependencies must come from github.com/storytold, and the
+  # Fails fast before any build: git dependencies must come from github.com/storytold (upstream
+  # craft-libs) or github.com/howardcrow3, and the
   # lock file must not declare source replacement, patches or path overrides that could silently
   # swap one. Lives here (not in each app's release.yml) so every craftapp gets the gate at @main.
   # Every build job needs `version`, so these builds are gated transitively.
   git-sources:
-    name: Git dependencies come from storytold
+    name: Git dependencies come from an allowed owner
     runs-on: ubuntu-latest
     timeout-minutes: 10
     permissions:
       contents: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Git dependencies come from storytold
+      - name: Git dependencies come from an allowed owner
         run: |
           set -euo pipefail
           test -f Cargo.lock || { echo "Cargo.lock is missing"; exit 1; }
@@ -160,9 +161,10 @@ jobs:
           lock = tomllib.load(open("Cargo.lock", "rb"))
           bad = sorted({p["source"] for p in lock.get("package", [])
                         if p.get("source", "").startswith("git+")
-                        and not p["source"].startswith("git+https://github.com/storytold/")})
+                        and not p["source"].startswith(("git+https://github.com/storytold/",
+                                                        "git+https://github.com/howardcrow3/"))})
           if bad:
-              print("Git dependencies outside github.com/storytold:", *bad, sep="\n")
+              print("Git dependencies outside github.com/storytold and github.com/howardcrow3:", *bad, sep="\n")
               sys.exit(1)
           PY
 
@@ -179,7 +181,7 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: v
         name: Resolve version
-        uses: storytold/craft-common-actions/actions/resolve-version@main
+        uses: howardcrow3/box-common/actions/resolve-version@main
         with:
           input-version: ${{ inputs.version }}
           app-title: ${{ inputs.app-title }}
@@ -197,49 +199,18 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       BUILD_DATE: ${{ needs.version.outputs.date }}
       BUILD_SHA: ${{ github.sha }}
-      CADCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      CADCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      CADCRAFT_BUILD_SHA: ${{ github.sha }}
-      ARTCRAFT_LAUNCHER_VERSION: ${{ needs.version.outputs.version }}
-      ARTCRAFT_LAUNCHER_BUILD_DATE: ${{ needs.version.outputs.date }}
-      ARTCRAFT_LAUNCHER_BUILD_SHA: ${{ github.sha }}
-      DECKCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DECKCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DECKCRAFT_BUILD_SHA: ${{ github.sha }}
-      DESIGNCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DESIGNCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DESIGNCRAFT_BUILD_SHA: ${{ github.sha }}
-      EFFECTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      EFFECTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      EFFECTCRAFT_BUILD_SHA: ${{ github.sha }}
-      FILMCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FILMCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FILMCRAFT_BUILD_SHA: ${{ github.sha }}
-      GRIDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      GRIDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      GRIDCRAFT_BUILD_SHA: ${{ github.sha }}
-      LIGHTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      LIGHTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      LIGHTCRAFT_BUILD_SHA: ${{ github.sha }}
-      PDFCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PDFCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
-      SOUNDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      SOUNDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      SOUNDCRAFT_BUILD_SHA: ${{ github.sha }}
-      VECTORCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      VECTORCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      VECTORCRAFT_BUILD_SHA: ${{ github.sha }}
-      WORDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      WORDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      WORDCRAFT_BUILD_SHA: ${{ github.sha }}
-      FIGCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FIGCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FIGCRAFT_BUILD_SHA: ${{ github.sha }}
-      INPUT_VERSION: ${{ inputs.version }}
+      VIDEOBOX_VERSION: ${{ needs.version.outputs.version }}
+      VIDEOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      VIDEOBOX_BUILD_SHA: ${{ github.sha }}
+      LIGHTBOX_VERSION: ${{ needs.version.outputs.version }}
+      LIGHTBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      LIGHTBOX_BUILD_SHA: ${{ github.sha }}
+      PHOTOBOX_VERSION: ${{ needs.version.outputs.version }}
+      PHOTOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PHOTOBOX_BUILD_SHA: ${{ github.sha }}
+      DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
+      DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      DESIGNBOX_BUILD_SHA: ${{ github.sha }}
     steps:
       # A signed job reads only the secrets the caller lists in its `secrets:` block; values come
       # from the repo's `release` environment. An unlisted name is empty, and the app's packaging
@@ -266,11 +237,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check out craft-fonts
         if: inputs.craft-fonts-ref != ''
-        uses: storytold/craft-common-actions/actions/checkout-craft-fonts@main
+        uses: howardcrow3/box-common/actions/checkout-craft-fonts@main
         with:
           ref: ${{ inputs.craft-fonts-ref }}
       - name: Check out craft-i18n
-        uses: storytold/craft-common-actions/actions/checkout-craft-i18n@main
+        uses: howardcrow3/box-common/actions/checkout-craft-i18n@main
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
@@ -335,49 +306,18 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       BUILD_DATE: ${{ needs.version.outputs.date }}
       BUILD_SHA: ${{ github.sha }}
-      CADCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      CADCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      CADCRAFT_BUILD_SHA: ${{ github.sha }}
-      ARTCRAFT_LAUNCHER_VERSION: ${{ needs.version.outputs.version }}
-      ARTCRAFT_LAUNCHER_BUILD_DATE: ${{ needs.version.outputs.date }}
-      ARTCRAFT_LAUNCHER_BUILD_SHA: ${{ github.sha }}
-      DECKCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DECKCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DECKCRAFT_BUILD_SHA: ${{ github.sha }}
-      DESIGNCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DESIGNCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DESIGNCRAFT_BUILD_SHA: ${{ github.sha }}
-      EFFECTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      EFFECTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      EFFECTCRAFT_BUILD_SHA: ${{ github.sha }}
-      FILMCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FILMCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FILMCRAFT_BUILD_SHA: ${{ github.sha }}
-      GRIDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      GRIDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      GRIDCRAFT_BUILD_SHA: ${{ github.sha }}
-      LIGHTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      LIGHTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      LIGHTCRAFT_BUILD_SHA: ${{ github.sha }}
-      PDFCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PDFCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
-      SOUNDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      SOUNDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      SOUNDCRAFT_BUILD_SHA: ${{ github.sha }}
-      VECTORCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      VECTORCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      VECTORCRAFT_BUILD_SHA: ${{ github.sha }}
-      WORDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      WORDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      WORDCRAFT_BUILD_SHA: ${{ github.sha }}
-      FIGCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FIGCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FIGCRAFT_BUILD_SHA: ${{ github.sha }}
-      INPUT_VERSION: ${{ inputs.version }}
+      VIDEOBOX_VERSION: ${{ needs.version.outputs.version }}
+      VIDEOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      VIDEOBOX_BUILD_SHA: ${{ github.sha }}
+      LIGHTBOX_VERSION: ${{ needs.version.outputs.version }}
+      LIGHTBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      LIGHTBOX_BUILD_SHA: ${{ github.sha }}
+      PHOTOBOX_VERSION: ${{ needs.version.outputs.version }}
+      PHOTOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PHOTOBOX_BUILD_SHA: ${{ github.sha }}
+      DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
+      DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      DESIGNBOX_BUILD_SHA: ${{ github.sha }}
     steps:
       # See the macOS job: unlisted secrets are empty, and the build would ship unsigned.
       # Signing needs either the PFX pair or all six Azure Trusted Signing values.
@@ -406,11 +346,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check out craft-fonts
         if: inputs.craft-fonts-ref != ''
-        uses: storytold/craft-common-actions/actions/checkout-craft-fonts@main
+        uses: howardcrow3/box-common/actions/checkout-craft-fonts@main
         with:
           ref: ${{ inputs.craft-fonts-ref }}
       - name: Check out craft-i18n
-        uses: storytold/craft-common-actions/actions/checkout-craft-i18n@main
+        uses: howardcrow3/box-common/actions/checkout-craft-i18n@main
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
@@ -423,7 +363,7 @@ jobs:
         shell: bash
         run: cargo xtask version set "$VERSION"
       - name: Install WiX
-        uses: storytold/craft-common-actions/actions/install-wix@main
+        uses: howardcrow3/box-common/actions/install-wix@main
         with:
           wix-version: ${{ inputs.wix-version }}
       - name: Build, sign, package
@@ -464,59 +404,28 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       BUILD_DATE: ${{ needs.version.outputs.date }}
       BUILD_SHA: ${{ github.sha }}
-      CADCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      CADCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      CADCRAFT_BUILD_SHA: ${{ github.sha }}
-      ARTCRAFT_LAUNCHER_VERSION: ${{ needs.version.outputs.version }}
-      ARTCRAFT_LAUNCHER_BUILD_DATE: ${{ needs.version.outputs.date }}
-      ARTCRAFT_LAUNCHER_BUILD_SHA: ${{ github.sha }}
-      DECKCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DECKCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DECKCRAFT_BUILD_SHA: ${{ github.sha }}
-      DESIGNCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DESIGNCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DESIGNCRAFT_BUILD_SHA: ${{ github.sha }}
-      EFFECTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      EFFECTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      EFFECTCRAFT_BUILD_SHA: ${{ github.sha }}
-      FILMCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FILMCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FILMCRAFT_BUILD_SHA: ${{ github.sha }}
-      GRIDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      GRIDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      GRIDCRAFT_BUILD_SHA: ${{ github.sha }}
-      LIGHTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      LIGHTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      LIGHTCRAFT_BUILD_SHA: ${{ github.sha }}
-      PDFCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PDFCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
-      SOUNDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      SOUNDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      SOUNDCRAFT_BUILD_SHA: ${{ github.sha }}
-      VECTORCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      VECTORCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      VECTORCRAFT_BUILD_SHA: ${{ github.sha }}
-      WORDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      WORDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      WORDCRAFT_BUILD_SHA: ${{ github.sha }}
-      FIGCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FIGCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FIGCRAFT_BUILD_SHA: ${{ github.sha }}
-      INPUT_VERSION: ${{ inputs.version }}
+      VIDEOBOX_VERSION: ${{ needs.version.outputs.version }}
+      VIDEOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      VIDEOBOX_BUILD_SHA: ${{ github.sha }}
+      LIGHTBOX_VERSION: ${{ needs.version.outputs.version }}
+      LIGHTBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      LIGHTBOX_BUILD_SHA: ${{ github.sha }}
+      PHOTOBOX_VERSION: ${{ needs.version.outputs.version }}
+      PHOTOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PHOTOBOX_BUILD_SHA: ${{ github.sha }}
+      DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
+      DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      DESIGNBOX_BUILD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check out craft-fonts
         if: inputs.craft-fonts-ref != ''
-        uses: storytold/craft-common-actions/actions/checkout-craft-fonts@main
+        uses: howardcrow3/box-common/actions/checkout-craft-fonts@main
         with:
           ref: ${{ inputs.craft-fonts-ref }}
       - name: Check out craft-i18n
-        uses: storytold/craft-common-actions/actions/checkout-craft-i18n@main
-      - uses: storytold/craft-common-actions/actions/install-linux-deps@main
+        uses: howardcrow3/box-common/actions/checkout-craft-i18n@main
+      - uses: howardcrow3/box-common/actions/install-linux-deps@main
         with:
           deb-arch: ${{ matrix.deb }}
           nfpm-version: ${{ inputs.nfpm-version }}
@@ -568,48 +477,18 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       BUILD_DATE: ${{ needs.version.outputs.date }}
       BUILD_SHA: ${{ github.sha }}
-      CADCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      CADCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      CADCRAFT_BUILD_SHA: ${{ github.sha }}
-      ARTCRAFT_LAUNCHER_VERSION: ${{ needs.version.outputs.version }}
-      ARTCRAFT_LAUNCHER_BUILD_DATE: ${{ needs.version.outputs.date }}
-      ARTCRAFT_LAUNCHER_BUILD_SHA: ${{ github.sha }}
-      DECKCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DECKCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DECKCRAFT_BUILD_SHA: ${{ github.sha }}
-      DESIGNCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DESIGNCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DESIGNCRAFT_BUILD_SHA: ${{ github.sha }}
-      EFFECTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      EFFECTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      EFFECTCRAFT_BUILD_SHA: ${{ github.sha }}
-      FILMCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FILMCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FILMCRAFT_BUILD_SHA: ${{ github.sha }}
-      GRIDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      GRIDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      GRIDCRAFT_BUILD_SHA: ${{ github.sha }}
-      LIGHTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      LIGHTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      LIGHTCRAFT_BUILD_SHA: ${{ github.sha }}
-      PDFCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PDFCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
-      SOUNDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      SOUNDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      SOUNDCRAFT_BUILD_SHA: ${{ github.sha }}
-      VECTORCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      VECTORCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      VECTORCRAFT_BUILD_SHA: ${{ github.sha }}
-      WORDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      WORDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      WORDCRAFT_BUILD_SHA: ${{ github.sha }}
-      FIGCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FIGCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FIGCRAFT_BUILD_SHA: ${{ github.sha }}
+      VIDEOBOX_VERSION: ${{ needs.version.outputs.version }}
+      VIDEOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      VIDEOBOX_BUILD_SHA: ${{ github.sha }}
+      LIGHTBOX_VERSION: ${{ needs.version.outputs.version }}
+      LIGHTBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      LIGHTBOX_BUILD_SHA: ${{ github.sha }}
+      PHOTOBOX_VERSION: ${{ needs.version.outputs.version }}
+      PHOTOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PHOTOBOX_BUILD_SHA: ${{ github.sha }}
+      DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
+      DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      DESIGNBOX_BUILD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
@@ -623,13 +502,12 @@ jobs:
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Build the Flatpak bundle
         env:
-          RELEASE_VERSION: ${{ needs.version.outputs.version }}
           ARCH: ${{ matrix.arch }}
         run: |
           shopt -s nullglob
           # The app's own tarball: <file-prefix>-<version>-linux-<arch>.tar.gz. The file prefix can
-          # differ from app-name (craft-launcher ships artcraft-launcher-*), and CLI or server
-          # tarballs (pdfcraft-cli-*, figcraft-server-*) sit beside it.
+          # differ from app-name (a suite launcher may ship under another name), and CLI or server
+          # tarballs (photobox-cli-*, designbox-server-*) sit beside it.
           tarballs=()
           for f in dist/linux/*-"${RELEASE_VERSION}"-linux-"${ARCH}".tar.gz; do
             case "${f##*/}" in *-cli-*|*-server-*) ;; *) tarballs+=("$f") ;; esac
@@ -664,13 +542,12 @@ jobs:
       - name: Find the release tarball
         id: tarball
         env:
-          RELEASE_VERSION: ${{ needs.version.outputs.version }}
           ARCH: ${{ matrix.arch }}
         run: |
           shopt -s nullglob
           # The app's own tarball: <file-prefix>-<version>-linux-<arch>.tar.gz. The file prefix can
-          # differ from app-name (craft-launcher ships artcraft-launcher-*), and CLI or server
-          # tarballs (pdfcraft-cli-*, figcraft-server-*) sit beside it.
+          # differ from app-name (a suite launcher may ship under another name), and CLI or server
+          # tarballs (photobox-cli-*, designbox-server-*) sit beside it.
           tarballs=()
           for f in dist/linux/*-"${RELEASE_VERSION}"-linux-"${ARCH}".tar.gz; do
             case "${f##*/}" in *-cli-*|*-server-*) ;; *) tarballs+=("$f") ;; esac
@@ -681,7 +558,7 @@ jobs:
           fi
           tarball="${tarballs[0]}"
           echo "path=$tarball" >>"$GITHUB_OUTPUT"
-      - uses: storytold/craft-common-actions/actions/arch-package@main
+      - uses: howardcrow3/box-common/actions/arch-package@main
         with:
           tarball: ${{ steps.tarball.outputs.path }}
           arch: ${{ matrix.arch }}
@@ -713,49 +590,18 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       BUILD_DATE: ${{ needs.version.outputs.date }}
       BUILD_SHA: ${{ github.sha }}
-      CADCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      CADCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      CADCRAFT_BUILD_SHA: ${{ github.sha }}
-      ARTCRAFT_LAUNCHER_VERSION: ${{ needs.version.outputs.version }}
-      ARTCRAFT_LAUNCHER_BUILD_DATE: ${{ needs.version.outputs.date }}
-      ARTCRAFT_LAUNCHER_BUILD_SHA: ${{ github.sha }}
-      DECKCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DECKCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DECKCRAFT_BUILD_SHA: ${{ github.sha }}
-      DESIGNCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DESIGNCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DESIGNCRAFT_BUILD_SHA: ${{ github.sha }}
-      EFFECTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      EFFECTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      EFFECTCRAFT_BUILD_SHA: ${{ github.sha }}
-      FILMCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FILMCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FILMCRAFT_BUILD_SHA: ${{ github.sha }}
-      GRIDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      GRIDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      GRIDCRAFT_BUILD_SHA: ${{ github.sha }}
-      LIGHTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      LIGHTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      LIGHTCRAFT_BUILD_SHA: ${{ github.sha }}
-      PDFCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PDFCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
-      SOUNDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      SOUNDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      SOUNDCRAFT_BUILD_SHA: ${{ github.sha }}
-      VECTORCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      VECTORCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      VECTORCRAFT_BUILD_SHA: ${{ github.sha }}
-      WORDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      WORDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      WORDCRAFT_BUILD_SHA: ${{ github.sha }}
-      FIGCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FIGCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FIGCRAFT_BUILD_SHA: ${{ github.sha }}
-      INPUT_VERSION: ${{ inputs.version }}
+      VIDEOBOX_VERSION: ${{ needs.version.outputs.version }}
+      VIDEOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      VIDEOBOX_BUILD_SHA: ${{ github.sha }}
+      LIGHTBOX_VERSION: ${{ needs.version.outputs.version }}
+      LIGHTBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      LIGHTBOX_BUILD_SHA: ${{ github.sha }}
+      PHOTOBOX_VERSION: ${{ needs.version.outputs.version }}
+      PHOTOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PHOTOBOX_BUILD_SHA: ${{ github.sha }}
+      DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
+      DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      DESIGNBOX_BUILD_SHA: ${{ github.sha }}
     steps:
       - name: Check the FreeBSD architecture
         env:
@@ -773,11 +619,11 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check out craft-fonts
         if: inputs.craft-fonts-ref != ''
-        uses: storytold/craft-common-actions/actions/checkout-craft-fonts@main
+        uses: howardcrow3/box-common/actions/checkout-craft-fonts@main
         with:
           ref: ${{ inputs.craft-fonts-ref }}
       - name: Check out craft-i18n
-        uses: storytold/craft-common-actions/actions/checkout-craft-i18n@main
+        uses: howardcrow3/box-common/actions/checkout-craft-i18n@main
       - name: Start the FreeBSD VM
         uses: vmactions/freebsd-vm@c46abacb49f09938ca4e1702d15d836285d694cc # v1.5.9
         with:
@@ -788,7 +634,7 @@ jobs:
           cpu: 4
           mem: 12288
           copyback: false
-          envs: "APP_NAME CARGO_HOME CARGO_TARGET_DIR CARGO_INCREMENTAL CARGO_BUILD_JOBS VERSION BUILD_DATE BUILD_SHA INPUT_VERSION CADCRAFT_VERSION CADCRAFT_BUILD_DATE CADCRAFT_BUILD_SHA ARTCRAFT_LAUNCHER_VERSION ARTCRAFT_LAUNCHER_BUILD_DATE ARTCRAFT_LAUNCHER_BUILD_SHA DECKCRAFT_VERSION DECKCRAFT_BUILD_DATE DECKCRAFT_BUILD_SHA DESIGNCRAFT_VERSION DESIGNCRAFT_BUILD_DATE DESIGNCRAFT_BUILD_SHA EFFECTCRAFT_VERSION EFFECTCRAFT_BUILD_DATE EFFECTCRAFT_BUILD_SHA FILMCRAFT_VERSION FILMCRAFT_BUILD_DATE FILMCRAFT_BUILD_SHA GRIDCRAFT_VERSION GRIDCRAFT_BUILD_DATE GRIDCRAFT_BUILD_SHA LIGHTCRAFT_VERSION LIGHTCRAFT_BUILD_DATE LIGHTCRAFT_BUILD_SHA PDFCRAFT_VERSION PDFCRAFT_BUILD_DATE PDFCRAFT_BUILD_SHA PHOTOCRAFT_VERSION PHOTOCRAFT_BUILD_DATE PHOTOCRAFT_BUILD_SHA SOUNDCRAFT_VERSION SOUNDCRAFT_BUILD_DATE SOUNDCRAFT_BUILD_SHA VECTORCRAFT_VERSION VECTORCRAFT_BUILD_DATE VECTORCRAFT_BUILD_SHA WORDCRAFT_VERSION WORDCRAFT_BUILD_DATE WORDCRAFT_BUILD_SHA FIGCRAFT_VERSION FIGCRAFT_BUILD_DATE FIGCRAFT_BUILD_SHA"
+          envs: "APP_NAME CARGO_HOME CARGO_TARGET_DIR CARGO_INCREMENTAL CARGO_BUILD_JOBS VERSION BUILD_DATE BUILD_SHA INPUT_VERSION DESIGNBOX_VERSION DESIGNBOX_BUILD_DATE DESIGNBOX_BUILD_SHA PHOTOBOX_VERSION PHOTOBOX_BUILD_DATE PHOTOBOX_BUILD_SHA VIDEOBOX_VERSION VIDEOBOX_BUILD_DATE VIDEOBOX_BUILD_SHA LIGHTBOX_VERSION LIGHTBOX_BUILD_DATE LIGHTBOX_BUILD_SHA"
           prepare: |
             # Keep rustup/proxies outside the Cargo data cache.
             unset CARGO_HOME CARGO_TARGET_DIR
@@ -866,7 +712,7 @@ jobs:
         id: cargo-cache
         continue-on-error: true
         timeout-minutes: 10
-        uses: storytold/craft-common-actions/actions/freebsd-cargo-cache@main
+        uses: howardcrow3/box-common/actions/freebsd-cargo-cache@main
         with:
           profile: release
           configuration: ${{ toJSON(inputs) }}
@@ -947,7 +793,7 @@ jobs:
         if: github.event_name != 'pull_request' && github.event_name != 'pull_request_target' && steps.cargo-cache.outputs.key != '' && steps.cargo-cache.outputs.cache-hit != 'true'
         continue-on-error: true
         timeout-minutes: 10
-        uses: storytold/craft-common-actions/actions/freebsd-cargo-cache@main
+        uses: howardcrow3/box-common/actions/freebsd-cargo-cache@main
         with:
           phase: save
           profile: release
@@ -969,49 +815,18 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       BUILD_DATE: ${{ needs.version.outputs.date }}
       BUILD_SHA: ${{ github.sha }}
-      CADCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      CADCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      CADCRAFT_BUILD_SHA: ${{ github.sha }}
-      ARTCRAFT_LAUNCHER_VERSION: ${{ needs.version.outputs.version }}
-      ARTCRAFT_LAUNCHER_BUILD_DATE: ${{ needs.version.outputs.date }}
-      ARTCRAFT_LAUNCHER_BUILD_SHA: ${{ github.sha }}
-      DECKCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DECKCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DECKCRAFT_BUILD_SHA: ${{ github.sha }}
-      DESIGNCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DESIGNCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DESIGNCRAFT_BUILD_SHA: ${{ github.sha }}
-      EFFECTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      EFFECTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      EFFECTCRAFT_BUILD_SHA: ${{ github.sha }}
-      FILMCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FILMCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FILMCRAFT_BUILD_SHA: ${{ github.sha }}
-      GRIDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      GRIDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      GRIDCRAFT_BUILD_SHA: ${{ github.sha }}
-      LIGHTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      LIGHTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      LIGHTCRAFT_BUILD_SHA: ${{ github.sha }}
-      PDFCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PDFCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
-      SOUNDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      SOUNDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      SOUNDCRAFT_BUILD_SHA: ${{ github.sha }}
-      VECTORCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      VECTORCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      VECTORCRAFT_BUILD_SHA: ${{ github.sha }}
-      WORDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      WORDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      WORDCRAFT_BUILD_SHA: ${{ github.sha }}
-      FIGCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FIGCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FIGCRAFT_BUILD_SHA: ${{ github.sha }}
-      INPUT_VERSION: ${{ inputs.version }}
+      VIDEOBOX_VERSION: ${{ needs.version.outputs.version }}
+      VIDEOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      VIDEOBOX_BUILD_SHA: ${{ github.sha }}
+      LIGHTBOX_VERSION: ${{ needs.version.outputs.version }}
+      LIGHTBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      LIGHTBOX_BUILD_SHA: ${{ github.sha }}
+      PHOTOBOX_VERSION: ${{ needs.version.outputs.version }}
+      PHOTOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PHOTOBOX_BUILD_SHA: ${{ github.sha }}
+      DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
+      DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      DESIGNBOX_BUILD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
@@ -1021,16 +836,16 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         with:
           key: release-web
-      - uses: storytold/craft-common-actions/actions/install-trunk@main
+      - uses: howardcrow3/box-common/actions/install-trunk@main
         with:
           trunk-version: ${{ inputs.trunk-version }}
       - name: Check out craft-fonts
         if: inputs.web-craft-fonts && inputs.craft-fonts-ref != ''
-        uses: storytold/craft-common-actions/actions/checkout-craft-fonts@main
+        uses: howardcrow3/box-common/actions/checkout-craft-fonts@main
         with:
           ref: ${{ inputs.craft-fonts-ref }}
       - name: Check out craft-i18n
-        uses: storytold/craft-common-actions/actions/checkout-craft-i18n@main
+        uses: howardcrow3/box-common/actions/checkout-craft-i18n@main
       - name: Apply version override
         if: inputs.version != ''
         run: cargo xtask version set "$VERSION"
@@ -1067,58 +882,27 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       BUILD_DATE: ${{ needs.version.outputs.date }}
       BUILD_SHA: ${{ github.sha }}
-      CADCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      CADCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      CADCRAFT_BUILD_SHA: ${{ github.sha }}
-      ARTCRAFT_LAUNCHER_VERSION: ${{ needs.version.outputs.version }}
-      ARTCRAFT_LAUNCHER_BUILD_DATE: ${{ needs.version.outputs.date }}
-      ARTCRAFT_LAUNCHER_BUILD_SHA: ${{ github.sha }}
-      DECKCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DECKCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DECKCRAFT_BUILD_SHA: ${{ github.sha }}
-      DESIGNCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      DESIGNCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      DESIGNCRAFT_BUILD_SHA: ${{ github.sha }}
-      EFFECTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      EFFECTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      EFFECTCRAFT_BUILD_SHA: ${{ github.sha }}
-      FILMCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FILMCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FILMCRAFT_BUILD_SHA: ${{ github.sha }}
-      GRIDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      GRIDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      GRIDCRAFT_BUILD_SHA: ${{ github.sha }}
-      LIGHTCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      LIGHTCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      LIGHTCRAFT_BUILD_SHA: ${{ github.sha }}
-      PDFCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PDFCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PDFCRAFT_BUILD_SHA: ${{ github.sha }}
-      PHOTOCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      PHOTOCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      PHOTOCRAFT_BUILD_SHA: ${{ github.sha }}
-      SOUNDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      SOUNDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      SOUNDCRAFT_BUILD_SHA: ${{ github.sha }}
-      VECTORCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      VECTORCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      VECTORCRAFT_BUILD_SHA: ${{ github.sha }}
-      WORDCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      WORDCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      WORDCRAFT_BUILD_SHA: ${{ github.sha }}
-      FIGCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FIGCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FIGCRAFT_BUILD_SHA: ${{ github.sha }}
-      INPUT_VERSION: ${{ inputs.version }}
+      VIDEOBOX_VERSION: ${{ needs.version.outputs.version }}
+      VIDEOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      VIDEOBOX_BUILD_SHA: ${{ github.sha }}
+      LIGHTBOX_VERSION: ${{ needs.version.outputs.version }}
+      LIGHTBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      LIGHTBOX_BUILD_SHA: ${{ github.sha }}
+      PHOTOBOX_VERSION: ${{ needs.version.outputs.version }}
+      PHOTOBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      PHOTOBOX_BUILD_SHA: ${{ github.sha }}
+      DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
+      DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      DESIGNBOX_BUILD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check out craft-fonts
         if: inputs.craft-fonts-ref != ''
-        uses: storytold/craft-common-actions/actions/checkout-craft-fonts@main
+        uses: howardcrow3/box-common/actions/checkout-craft-fonts@main
         with:
           ref: ${{ inputs.craft-fonts-ref }}
       - name: Check out craft-i18n
-        uses: storytold/craft-common-actions/actions/checkout-craft-i18n@main
+        uses: howardcrow3/box-common/actions/checkout-craft-i18n@main
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
@@ -1129,9 +913,9 @@ jobs:
       - name: Apply version override
         if: inputs.version != ''
         run: cargo xtask version set "$VERSION"
-      - uses: storytold/craft-common-actions/actions/install-riscv64-cross@main
+      - uses: howardcrow3/box-common/actions/install-riscv64-cross@main
       - name: Install nfpm (SHA256-verified)
-        uses: storytold/craft-common-actions/actions/install-nfpm@main
+        uses: howardcrow3/box-common/actions/install-nfpm@main
         with:
           nfpm-version: ${{ inputs.nfpm-version }}
           deb-arch: amd64
@@ -1178,13 +962,13 @@ jobs:
       VERSION: ${{ needs.version.outputs.version }}
       BUILD_DATE: ${{ needs.version.outputs.date }}
       BUILD_SHA: ${{ github.sha }}
-      FIGCRAFT_VERSION: ${{ needs.version.outputs.version }}
-      FIGCRAFT_BUILD_DATE: ${{ needs.version.outputs.date }}
-      FIGCRAFT_BUILD_SHA: ${{ github.sha }}
+      DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
+      DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
+      DESIGNBOX_BUILD_SHA: ${{ github.sha }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check out craft-i18n
-        uses: storytold/craft-common-actions/actions/checkout-craft-i18n@main
+        uses: howardcrow3/box-common/actions/checkout-craft-i18n@main
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
@@ -1218,7 +1002,7 @@ jobs:
     permissions:
       contents: write
     steps:
-      - uses: storytold/craft-common-actions/actions/draft-release@main
+      - uses: howardcrow3/box-common/actions/draft-release@main
         with:
           version: ${{ needs.version.outputs.version }}
           app-title: ${{ inputs.app-title }}
