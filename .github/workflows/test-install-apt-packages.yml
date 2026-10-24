@@ -1,0 +1,35 @@
+name: install-apt-packages test
+
+on:
+  pull_request:
+    paths:
+      - actions/install-apt-packages/**
+      - .github/workflows/test-install-apt-packages.yml
+  push:
+    branches: [main]
+    paths:
+      - actions/install-apt-packages/**
+      - .github/workflows/test-install-apt-packages.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  install:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Install packages
+        uses: ./actions/install-apt-packages
+        with:
+          packages: |
+            pkg-config libxkbcommon-dev
+            mesa-vulkan-drivers
+      - name: Check the packages and the kept downloads
+        run: |
+          set -euo pipefail
+          dpkg -s pkg-config libxkbcommon-dev mesa-vulkan-drivers > /dev/null
+          ls "$HOME"/.cache/craft-apt-debs/*.deb > /dev/null
+          test -z "$(find "$HOME/.cache/craft-apt-debs" ! -user "$(id -un)" -print -quit)"

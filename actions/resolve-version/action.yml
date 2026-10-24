@@ -1,0 +1,55 @@
+name: "Resolve version"
+description: "Resolves, validates, and outputs the release version and date"
+
+inputs:
+  input-version:
+    description: "Version override (optional, e.g. 0.2.0-rc.1)"
+    required: false
+    default: ""
+  app-title:
+    description: "Application display name for the job summary"
+    required: false
+    default: "Craft App"
+
+outputs:
+  version:
+    description: "Resolved semver string without 'v' prefix"
+    value: ${{ steps.resolve.outputs.version }}
+  date:
+    description: "Build date formatted as YYYY-MM-DD"
+    value: ${{ steps.resolve.outputs.date }}
+  prerelease:
+    description: "Boolean indicating if the version is a prerelease"
+    value: ${{ steps.resolve.outputs.prerelease }}
+
+runs:
+  using: "composite"
+  steps:
+    - id: resolve
+      name: Resolve version
+      shell: bash
+      env:
+        INPUT_VERSION: ${{ inputs.input-version }}
+        APP_TITLE: ${{ inputs.app-title }}
+      run: |
+        if [ -f packaging/env.sh ]; then
+          . packaging/env.sh
+        elif [ -f packaging/common.sh ]; then
+          . packaging/common.sh
+        fi
+        v="$INPUT_VERSION"
+        v="${v#v}"
+        v="${v:-$VERSION}"
+        # Whole-string match: grep would accept a multi-line input with one valid line.
+        semver='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+        if [[ ! "$v" =~ $semver ]]; then
+          echo "::error::'$v' is not a version like 1.2.3 or 1.2.3-rc.1"
+          exit 1
+        fi
+        case "$v" in *-*) pre=true ;; *) pre=false ;; esac
+        {
+          echo "version=$v"
+          echo "date=$(date -u +%Y-%m-%d)"
+          echo "prerelease=$pre"
+        } >>"$GITHUB_OUTPUT"
+        printf '### %s v%s (`%s`)\n' "$APP_TITLE" "$v" "${GITHUB_SHA::9}" >>"$GITHUB_STEP_SUMMARY"
