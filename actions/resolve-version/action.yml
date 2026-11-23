@@ -29,6 +29,7 @@ runs:
       name: Resolve version
       shell: bash
       env:
+        INPUT_VERSION: ${{ inputs.input-version }}
         APP_TITLE: ${{ inputs.app-title }}
       run: |
         if [ -f packaging/env.sh ]; then

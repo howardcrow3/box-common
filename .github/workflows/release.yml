@@ -211,6 +211,7 @@ jobs:
       DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
       DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
       DESIGNBOX_BUILD_SHA: ${{ github.sha }}
+      INPUT_VERSION: ${{ inputs.version }}
     steps:
       # A signed job reads only the secrets the caller lists in its `secrets:` block; values come
       # from the repo's `release` environment. An unlisted name is empty, and the app's packaging
@@ -318,6 +319,7 @@ jobs:
       DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
       DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
       DESIGNBOX_BUILD_SHA: ${{ github.sha }}
+      INPUT_VERSION: ${{ inputs.version }}
     steps:
       # See the macOS job: unlisted secrets are empty, and the build would ship unsigned.
       # Signing needs either the PFX pair or all six Azure Trusted Signing values.
@@ -416,6 +418,7 @@ jobs:
       DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
       DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
       DESIGNBOX_BUILD_SHA: ${{ github.sha }}
+      INPUT_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check out craft-fonts
@@ -502,6 +505,7 @@ jobs:
           sudo sysctl -w kernel.apparmor_restrict_unprivileged_userns=0
       - name: Build the Flatpak bundle
         env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
           ARCH: ${{ matrix.arch }}
         run: |
           shopt -s nullglob
@@ -542,6 +546,7 @@ jobs:
       - name: Find the release tarball
         id: tarball
         env:
+          RELEASE_VERSION: ${{ needs.version.outputs.version }}
           ARCH: ${{ matrix.arch }}
         run: |
           shopt -s nullglob
@@ -602,6 +607,7 @@ jobs:
       DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
       DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
       DESIGNBOX_BUILD_SHA: ${{ github.sha }}
+      INPUT_VERSION: ${{ inputs.version }}
     steps:
       - name: Check the FreeBSD architecture
         env:
@@ -827,6 +833,7 @@ jobs:
       DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
       DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
       DESIGNBOX_BUILD_SHA: ${{ github.sha }}
+      INPUT_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
@@ -894,6 +901,7 @@ jobs:
       DESIGNBOX_VERSION: ${{ needs.version.outputs.version }}
       DESIGNBOX_BUILD_DATE: ${{ needs.version.outputs.date }}
       DESIGNBOX_BUILD_SHA: ${{ github.sha }}
+      INPUT_VERSION: ${{ inputs.version }}
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - name: Check out craft-fonts
